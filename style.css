@@ -70,9 +70,16 @@ button {
   border-radius: 8px;
 }
 
-.palette {
+.color-palette {
   display: grid;
   grid-template-columns: repeat(3, max-content);
+  gap: 4px;
+  width: max-content;
+}
+
+.tool-palette {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
   gap: 4px;
   width: max-content;
 }
