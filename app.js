@@ -1,5 +1,7 @@
 // @ts-check
 
+import { sampleColorAtPoint, assert, pointsToSmoothPath } from "./utils";
+
 /**
  * @typedef {object} Point
  * @prop {number} x
@@ -131,15 +133,15 @@ class Editor {
   init() {
     window.addEventListener("pointermove", (event) => {
       let bounds = this.contentCanvas.getBoundingClientRect();
-      let x = event.clientX - bounds.x;
-      let y = event.clientY - bounds.y;
+      let x = Math.floor(event.clientX - bounds.x);
+      let y = Math.floor(event.clientY - bounds.y);
       this.cursor = { x, y };
     });
 
     this.contentCanvas.addEventListener("pointerdown", (event) => {
       let bounds = this.contentCanvas.getBoundingClientRect();
-      let x = event.clientX - bounds.x;
-      let y = event.clientY - bounds.y;
+      let x = Math.floor(event.clientX - bounds.x);
+      let y = Math.floor(event.clientY - bounds.y);
 
       if (this.currentTool === "eyedropper") {
         this.currentColor = sampleColorAtPoint(this.contentContext, {
