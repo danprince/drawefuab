@@ -488,7 +488,7 @@ function applyDrawCommand(ctx, command) {
 function sampleColorAtPoint(ctx, point) {
   let imageData = ctx.getImageData(point.x, point.y, 1, 1);
   let [r, g, b, a] = imageData.data;
-  return `rgba(${r}, ${g}, ${b}, ${a / 255})`;
+  return a > 0 ? `rgba(${r}, ${g}, ${b}, ${a / 255})` : `rgb(255, 255, 255)`;
 }
 
 /**
