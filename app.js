@@ -96,7 +96,7 @@ class Editor {
    * The color that is currently selected within the editor.
    * @type {string}
    */
-  currentColor = "red";
+  currentColor = this.colorPalette[0] ?? "#000000";
 
   /**
    * The radius of the current pen.
