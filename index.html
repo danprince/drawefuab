@@ -19,10 +19,13 @@
             :style="{ background: color }"
           ></button>
         </template>
-        <button
-          class="swatch active"
-          :style="{ background: currentColor }"
-        ></button>
+        <label class="swatch active" :style="{ background: currentColor }">
+          <input
+            type="color"
+            style="width: 0; opacity: 0"
+            @change="currentColor = $event.target.value"
+          />
+        </label>
       </div>
 
       <div class="">
