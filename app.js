@@ -33,7 +33,7 @@ class Editor {
    * The rendering context for the content canvas.
    */
   contentContext = /** @type {CanvasRenderingContext2D} */ (
-    this.contentCanvas.getContext("2d")
+    this.contentCanvas.getContext("2d", { willReadFrequently: true })
   );
 
   /**
