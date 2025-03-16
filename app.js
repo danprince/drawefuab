@@ -502,6 +502,14 @@ function pointsToSmoothPath(points, smoothing = 0.2) {
     return new Path2D();
   }
 
+  // If there's only one point, then bezier curves won't work, instead we just
+  // draw a single point line.
+  if (points.length === 1) {
+    return new Path2D(
+      `M ${points[0].x} ${points[0].y} L ${points[0].x} ${points[0].y}`,
+    );
+  }
+
   points = simplifyPoints(points);
 
   let start = points[0];
