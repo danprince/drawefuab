@@ -457,7 +457,7 @@ function applyDrawCommand(ctx, command) {
   ctx.save();
 
   if (command.type === "stroke") {
-    let path = pointsToPath(command.points);
+    let path = pointsToSmoothPath(command.points);
     ctx.lineWidth = command.size;
     ctx.globalAlpha = command.opacity;
     ctx.strokeStyle = command.color;
@@ -465,7 +465,7 @@ function applyDrawCommand(ctx, command) {
     ctx.lineJoin = "round";
     ctx.stroke(path);
   } else if (command.type === "erase") {
-    let path = pointsToPath(command.points);
+    let path = pointsToSmoothPath(command.points);
     ctx.lineWidth = command.size;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -492,11 +492,12 @@ function sampleColorAtPoint(ctx, point) {
 }
 
 /**
- * Convert an array of points into an SVG/Path2D command string.
+ * Convert an array of points into a smooth Path2D.
  * @param {Point[]} points
+ * @param {number} smoothing
  * @returns {Path2D}
  */
-export function pointsToPath(points) {
+function pointsToSmoothPath(points, smoothing = 0.2) {
   if (points.length === 0) {
     return new Path2D();
   }
@@ -504,23 +505,55 @@ export function pointsToPath(points) {
   points = simplifyPoints(points);
 
   let start = points[0];
-  let cmds = ["M", start.x, start.y];
+  let commands = `M ${start.x} ${start.y}`;
 
-  if (points.length > 1) {
-    cmds.push("Q");
-  } else {
-    cmds.push("Z");
+  for (let i = 1; i < points.length - 1; i++) {
+    let point = points[i];
+
+    let startControlPoint = getControlPoint(
+      points[i - 1],
+      points[i - 2],
+      point,
+      smoothing,
+      false,
+    );
+
+    let endControlPoint = getControlPoint(
+      point,
+      points[i - 1],
+      points[i + 1],
+      smoothing,
+      true,
+    );
+
+    commands += `C ${startControlPoint.x}, ${startControlPoint.y} ${endControlPoint.x}, ${endControlPoint.y} ${point.x}, ${point.y}`;
   }
 
-  for (let i = 0; i < points.length - 1; i++) {
-    let p1 = points[i];
-    let p2 = points[i + 1];
-    let cx = (p1.x + p2.x) / 2;
-    let cy = (p1.y + p2.y) / 2;
-    cmds.push(cx, cy, p2.x, p2.y);
-  }
+  return new Path2D(commands);
+}
 
-  return new Path2D(cmds.join(" "));
+/**
+ * @param {Point} point
+ * @param {Point | undefined} previousPoint
+ * @param {Point | undefined} nextPoint
+ * @param {number} smoothing,
+ * @param {boolean} reverse
+ * @returns {Point}
+ */
+function getControlPoint(
+  point,
+  previousPoint = point,
+  nextPoint = point,
+  smoothing,
+  reverse = false,
+) {
+  let lineLengthX = nextPoint.x - previousPoint.x;
+  let lineLengthY = nextPoint.y - previousPoint.y;
+  let length = Math.hypot(lineLengthX, lineLengthY) * smoothing;
+  let angle = Math.atan2(lineLengthY, lineLengthX) + (reverse ? Math.PI : 0);
+  let x = point.x + Math.cos(angle) * length;
+  let y = point.y + Math.sin(angle) * length;
+  return { x, y };
 }
 
 /**
