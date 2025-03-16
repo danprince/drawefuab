@@ -1,0 +1,186 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: #4f2597;
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viewport {
+  width: 600px;
+  height: 600px;
+  position: relative;
+  background: white;
+  border: solid 2px black;
+  border-radius: 8px;
+  box-shadow: 0 6px #320e6d;
+}
+
+.viewport canvas {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  /* We render a custom cursor inside the preview canvas (depending on which
+   * tool you are using). */
+  cursor: none;
+}
+
+.swatch {
+  width: 32px;
+  height: 32px;
+  border: solid 2px black;
+  border-radius: 4px;
+}
+
+.swatch.active {
+  width: 100%;
+  height: 48px;
+  grid-column: span 3;
+}
+
+.panel {
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  align-content: start;
+  gap: 8px;
+}
+
+.panel-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 8px;
+  border: solid 2px rgba(255, 255, 255, 0.2);
+  padding: 4px 15px;
+  border-radius: 8px;
+}
+
+.palette {
+  display: grid;
+  grid-template-columns: repeat(3, max-content);
+  gap: 4px;
+  width: max-content;
+}
+
+.pen-settings {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.tool {
+  width: 48px;
+  height: 48px;
+  padding: 8px;
+  background: transparent;
+  border: solid 2px white;
+  border-radius: 4px;
+  color: white;
+  box-shadow: inset 0 0 0 3px #381969;
+  opacity: 0.5;
+}
+
+.tool[aria-pressed="true"] {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.tool:disabled {
+  opacity: 0.25;
+}
+
+.tool:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.pen-size {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: solid 2px white;
+  display: block;
+  background: transparent;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.2;
+}
+
+.pen-size:hover {
+  opacity: 0.3;
+}
+
+.pen-size[aria-pressed="true"] {
+  opacity: 1;
+}
+
+.pen-size-inner {
+  background-color: white;
+  border-radius: 50%;
+}
+
+.slider {
+  position: relative;
+  width: 100%;
+  height: 5px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 8px;
+  cursor: pointer;
+  margin: 0 8px;
+}
+
+.slider-handle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #614888;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 0;
+}
+
+.slider[data-active] .slider-handle,
+.slider:hover .slider-handle {
+  background-color: #9479bd;
+}
+
+.opacity-preview {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: solid 2px white;
+  padding: 0;
+  display: block;
+  flex-shrink: 0;
+}
+
+.opacity-preview-full {
+  background-color: white;
+}
+
+.opacity-preview-none {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+#preview {
+  /* Make sure all pointer events fall through the preview canvas and onto the
+   * content canvas which does all the important listening.
+   */
+  pointer-events: none;
+}
