@@ -5,6 +5,8 @@ import {
   pointsToSmoothPath,
   addDragListeners,
   sampleRgbaAtPoint,
+  floodfill,
+  colorToRgba,
 } from "./utils.js";
 
 /**
@@ -15,9 +17,10 @@ import {
  * @typedef {(
  *   | { type: "stroke", points: Point[], color: string, size: number, opacity: number }
  *   | { type: "erase", points: Point[], size: number }
+ *   | { type: "fill", point: Point, color: string, opacity: number }
  * )} DrawingCommand
  *
- * @typedef {"pen" | "eraser" | "eyedropper"} Tool
+ * @typedef {"pen" | "eraser" | "eyedropper" | "fill"} Tool
  */
 
 class Editor {
@@ -203,10 +206,42 @@ class Editor {
             this.currentPath = [];
           },
         });
+      } else if (this.currentTool === "fill") {
+        this.fill({ x, y });
       }
     });
 
     this.resize();
+  }
+
+  /**
+   * @returns {import("./utils.js").Rgba}
+   */
+  getCurrentColorAsRgba() {
+    return {
+      ...colorToRgba(this.currentColor),
+      a: Math.floor(this.currentOpacity * 255),
+    };
+  }
+
+  /**
+   * Fill the region around a point using the current color and opacity.
+   * @param {Point} point
+   */
+  fill(point) {
+    let sourceColor = sampleRgbaAtPoint(this.contentContext, point);
+    let targetColor = this.getCurrentColorAsRgba();
+
+    if (sourceColor === targetColor) {
+      return;
+    }
+
+    this.commit({
+      type: "fill",
+      point: point,
+      color: this.currentColor,
+      opacity: this.currentOpacity,
+    });
   }
 
   /**
@@ -441,6 +476,8 @@ function applyDrawCommand(ctx, command) {
     ctx.lineJoin = "round";
     ctx.globalCompositeOperation = "destination-out";
     ctx.stroke(path);
+  } else if (command.type === "fill") {
+    floodfill(ctx, command.point, command.color, command.opacity);
   }
 
   ctx.restore();

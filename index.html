@@ -113,6 +113,17 @@
             ></path>
           </svg>
         </button>
+
+        <button
+          class="tool"
+          :aria-pressed="currentTool === 'fill'"
+          @click="setTool('fill')"
+        >
+        F
+        </button>
+
+        <button class="tool">_</button>
+
         <button
           class="tool"
           :aria-pressed="currentTool === 'eyedropper'"
