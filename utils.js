@@ -224,3 +224,119 @@ export function addDragListeners(event, handlers) {
   window.addEventListener("keydown", onKeyDown);
   onPointerMove(event);
 }
+
+/**
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {Point} point
+ * @param {string} color
+ * @param {number} opacity
+ */
+export function floodfill(ctx, point, color, opacity) {
+  let sourceColor = sampleRgbaAtPoint(ctx, point);
+  let targetColor = colorToRgba(color);
+  targetColor.a = (opacity * 255) | 0;
+
+  if (
+    sourceColor.r === targetColor.r &&
+    sourceColor.g === targetColor.g &&
+    sourceColor.b === targetColor.b &&
+    sourceColor.a === targetColor.a
+  ) {
+    return;
+  }
+
+  // Implementation of the algorithm described in this article:
+  // https://www.williammalone.com/articles/html5-canvas-javascript-paint-bucket-tool/
+
+  let transform = ctx.getTransform();
+  let { width, height } = ctx.canvas;
+  let imageData = ctx.getImageData(0, 0, width, height);
+  let initialPixel = point.x * transform.a + point.y * transform.d * width;
+  let stack = [initialPixel];
+
+  while (stack.length > 0) {
+    let pixel = stack.pop();
+    assert(pixel !== undefined);
+
+    let x = pixel % width;
+    let y = (pixel / width) | 0;
+
+    // Scan upwards until we hit the boundaries or a pixel that is a different
+    // color.
+    while (y > 0) {
+      let index = x + (y - 1) * width;
+
+      if (!isSameColor(imageData, index, sourceColor)) {
+        break;
+      }
+
+      y -= 1;
+    }
+
+    let reachLeft = false;
+    let reachRight = false;
+
+    // Scan downwards recoloring pixels as we go and marking neighbours for
+    // subsequent scans.
+    while (y < height) {
+      let index = x + y * width;
+
+      if (!isSameColor(imageData, index, sourceColor)) {
+        break;
+      }
+
+      let offset = index * 4;
+      imageData.data[offset + 0] = targetColor.r;
+      imageData.data[offset + 1] = targetColor.g;
+      imageData.data[offset + 2] = targetColor.b;
+      imageData.data[offset + 3] = targetColor.a;
+
+      let leftPixelIndex = index - 1;
+      let rightPixelIndex = index + 1;
+
+      if (x > 0 && isSameColor(imageData, leftPixelIndex, sourceColor)) {
+        if (!reachLeft) {
+          stack.push(leftPixelIndex);
+          reachLeft = true;
+        }
+      } else if (reachLeft) {
+        reachLeft = false;
+      }
+
+      if (
+        x < width - 1 &&
+        isSameColor(imageData, rightPixelIndex, sourceColor)
+      ) {
+        if (!reachRight) {
+          stack.push(rightPixelIndex);
+          reachRight = true;
+        }
+      } else if (reachRight) {
+        reachRight = false;
+      }
+
+      y++;
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
+/**
+ * Check whether two pixels have the same color.
+ * @param {ImageData} imageData
+ * @param {number} pixelIndex
+ * @param {Rgba} color
+ * @returns {boolean}
+ */
+function isSameColor(imageData, pixelIndex, color) {
+  let i = pixelIndex * 4;
+  // TODO: This won't handle anti-aliasing very well, should switch to using a
+  // tolerance based check once fill is working properly.
+  return (
+    imageData.data[i + 0] === color.r &&
+    imageData.data[i + 1] === color.g &&
+    imageData.data[i + 2] === color.b &&
+    imageData.data[i + 3] === color.a
+  );
+}
