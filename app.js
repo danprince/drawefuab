@@ -123,6 +123,9 @@ class Editor {
   commands = [];
 
   /**
+   * The head is the (git style) index that points to the most recently
+   * applied command. Moving the head backwards/forwards is how undo/redo
+   * works.
    * @type {number}
    */
   head = 0;
@@ -212,11 +215,10 @@ class Editor {
    * @param {DrawingCommand} command
    */
   commit(command) {
-    this.commands = [
-      ...this.commands.slice(0, this.commands.length - this.head),
-      command,
-    ];
-    this.head = 0;
+    // Take the commands before HEAD, discarding any that came after.
+    let activeCommands = this.commands.slice(0, this.head);
+    this.commands = [...activeCommands, command];
+    this.head = this.commands.length;
   }
 
   /**
@@ -224,7 +226,7 @@ class Editor {
    */
   undo() {
     if (this.canUndo()) {
-      this.head += 1;
+      this.head -= 1;
     }
   }
 
@@ -233,7 +235,7 @@ class Editor {
    */
   redo() {
     if (this.canRedo()) {
-      this.head -= 1;
+      this.head += 1;
     }
   }
 
@@ -242,7 +244,7 @@ class Editor {
    * @returns {boolean}
    */
   canUndo() {
-    return this.head < this.commands.length;
+    return this.head > 0;
   }
 
   /**
@@ -250,7 +252,7 @@ class Editor {
    * @returns {boolean}
    */
   canRedo() {
-    return this.commands.length > 0 && this.head > 0;
+    return this.head < this.commands.length;
   }
 
   /**
@@ -282,7 +284,7 @@ class Editor {
     ctx.save();
     ctx.scale(this.resolution, this.resolution);
 
-    for (let i = 0; i < this.commands.length - this.head; i++) {
+    for (let i = 0; i < this.head; i++) {
       let command = this.commands[i];
       applyDrawCommand(ctx, command);
     }
