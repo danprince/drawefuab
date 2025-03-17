@@ -281,20 +281,43 @@ class Editor {
   }
 
   /**
+   * The renderer keeps track of a separate HEAD so that it can draw the
+   * minimum number of commands to sync up with the editor HEAD.
+   */
+  renderHead = 0;
+
+  /**
    * Render state of the canvas after applying the list of active drawing commands.
    */
   renderContent() {
     let ctx = this.contentContext;
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    // If the renderer is ahead of the editor, it means that the user has
+    // undone some commands. Rendering to a canvas is an additive process
+    // and we can't undo one step, so we have to just redraw the whole image
+    // from scratch (by setting the render head back to zero).
+    if (this.renderHead > this.head) {
+      this.renderHead = 0;
+    }
+
+    // We only clear the canvas if we're actually rendering from scratch. In
+    // all the other scenarios, we're just applying draw commands
+    // incrementally.
+    if (this.renderHead === 0) {
+      ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+    }
+
     ctx.save();
     ctx.scale(this.resolution, this.resolution);
 
-    for (let i = 0; i < this.head; i++) {
+    for (let i = this.renderHead; i < this.head; i++) {
       let command = this.commands[i];
       applyDrawCommand(ctx, command);
     }
 
     ctx.restore();
+
+    this.renderHead = this.head;
   }
 
   /**
