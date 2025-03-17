@@ -168,3 +168,79 @@ export function assert(condition, message = "Assertion failed") {
     throw new Error(message);
   }
 }
+
+/**
+ * Create the event listeners for handling a drag interaction that begins from
+ * a pointerdown event.
+ * @param {PointerEvent} event
+ * @param {object} handlers
+ * @param {(point: Point, bounds: DOMRect) => void} handlers.onDrag
+ * Called for each pointer movement during the drag interaction with the
+ * pointer's position _relative_ to the element that the initial event handler
+ * was attached to. Also passes along the bounds of the element to make it a
+ * bit easier to get a relative position/percentage when necessary.
+ * @param {() => void} [handlers.onCommit]
+ * Called if the user finishes dragging by releasing the pointer.
+ * @param {() => void} [handlers.onCancel]
+ * Called if the user finishes dragging by pressing escape or blurring the window.
+ */
+export function addDragListeners(event, handlers) {
+  const element = event.currentTarget;
+
+  if (!(element instanceof HTMLElement)) {
+    throw new Error("Drag target is not an element!");
+  }
+
+  let bounds = element.getBoundingClientRect();
+  element.setAttribute("data-active", "");
+
+  const cancel = () => {
+    handlers.onCancel?.();
+    cleanup();
+  };
+
+  const commit = () => {
+    handlers.onCommit?.();
+    cleanup();
+  };
+
+  /**
+   * @param {PointerEvent} event
+   */
+  const onPointerMove = (event) => {
+    let x = event.clientX - bounds.x;
+    let y = event.clientY - bounds.y;
+    handlers.onDrag({ x, y }, bounds);
+  };
+
+  /**
+   * @param {KeyboardEvent} event
+   */
+  const onKeyDown = (event) => {
+    if (event.key === "Escape") {
+      cancel();
+    }
+  };
+
+  const onPointerUp = () => {
+    commit();
+  };
+
+  const onBlur = () => {
+    cancel();
+  };
+
+  const cleanup = () => {
+    element.removeAttribute("data-active");
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+    window.removeEventListener("blur", onBlur);
+    window.removeEventListener("keydown", onKeyDown);
+  };
+
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+  window.addEventListener("blur", onBlur);
+  window.addEventListener("keydown", onKeyDown);
+  onPointerMove(event);
+}

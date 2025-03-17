@@ -1,6 +1,11 @@
 // @ts-check
 
-import { sampleColorAtPoint, assert, pointsToSmoothPath } from "./utils.js";
+import {
+  sampleColorAtPoint,
+  assert,
+  pointsToSmoothPath,
+  addDragListeners,
+} from "./utils.js";
 
 /**
  * @typedef {object} Point
@@ -158,7 +163,7 @@ class Editor {
         });
       } else if (this.currentTool === "pen") {
         this.currentPath = [];
-        this.beginDragTracking(event, {
+        addDragListeners(event, {
           onDrag: (point) => {
             this.currentPath.push(point);
           },
@@ -179,7 +184,7 @@ class Editor {
         });
       } else if (this.currentTool === "eraser") {
         this.currentPath = [];
-        this.beginDragTracking(event, {
+        addDragListeners(event, {
           onDrag: (point) => {
             this.currentPath.push(point);
           },
@@ -339,79 +344,10 @@ class Editor {
 
   /**
    * @param {PointerEvent} event
-   * @param {{
-   *   onDrag(point: Point, bounds: DOMRect): void
-   *   onCommit?(): void;
-   *   onCancel?(): void;
-   * }} handlers
-   */
-  beginDragTracking(event, handlers) {
-    const element = event.currentTarget;
-
-    if (!(element instanceof HTMLElement)) {
-      throw new Error("Drag target is not an element!");
-    }
-
-    let bounds = element.getBoundingClientRect();
-    element.setAttribute("data-active", "");
-
-    const cancel = () => {
-      handlers.onCancel?.();
-      cleanup();
-    };
-
-    const commit = () => {
-      handlers.onCommit?.();
-      cleanup();
-    };
-
-    /**
-     * @param {PointerEvent} event
-     */
-    const onPointerMove = (event) => {
-      let x = event.clientX - bounds.x;
-      let y = event.clientY - bounds.y;
-      handlers.onDrag({ x, y }, bounds);
-    };
-
-    /**
-     * @param {KeyboardEvent} event
-     */
-    const onKeyDown = (event) => {
-      if (event.key === "Escape") {
-        cancel();
-      }
-    };
-
-    const onPointerUp = () => {
-      commit();
-    };
-
-    const onBlur = () => {
-      cancel();
-    };
-
-    const cleanup = () => {
-      element.removeAttribute("data-active");
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("blur", onBlur);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("blur", onBlur);
-    window.addEventListener("keydown", onKeyDown);
-    onPointerMove(event);
-  }
-
-  /**
-   * @param {PointerEvent} event
    * @param {(value: number) => void} callback
    */
   beginHorizontalDrag(event, callback) {
-    this.beginDragTracking(event, {
+    addDragListeners(event, {
       onDrag({ x }, { width }) {
         callback(Math.max(0, Math.min(1, x / width)));
       },
