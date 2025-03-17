@@ -138,6 +138,11 @@ class Editor {
       this.cursor = { x, y };
     });
 
+    window.addEventListener("touchend", () => {
+      // Remove the cursor when the touch finishes on mobile.
+      this.cursor = undefined;
+    });
+
     this.contentCanvas.addEventListener("pointerdown", (event) => {
       let bounds = this.contentCanvas.getBoundingClientRect();
       let x = Math.floor(event.clientX - bounds.x);
