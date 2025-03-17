@@ -160,10 +160,7 @@ class Editor {
       let y = Math.floor(event.clientY - bounds.y);
 
       if (this.currentTool === "eyedropper") {
-        let color = sampleRgbaAtPoint(this.contentContext, {
-          x: x * this.resolution,
-          y: y * this.resolution,
-        });
+        let color = sampleRgbaAtPoint(this.contentContext, { x, y });
         this.currentColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
         this.currentOpacity = color.a / 255;
       } else if (this.currentTool === "pen") {

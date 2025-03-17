@@ -18,13 +18,18 @@
  * @returns {Rgba}
  */
 export function sampleRgbaAtPoint(ctx, point) {
-  let imageData = ctx.getImageData(point.x, point.y, 1, 1);
+  let transform = ctx.getTransform();
+  let x = (point.x * transform.a) | 0;
+  let y = (point.y * transform.d) | 0;
+  let imageData = ctx.getImageData(x, y, 1, 1);
   let [r, g, b, a] = imageData.data;
   return { r, g, b, a };
 }
 
 let colorSamplingContext = /** @type {CanvasRenderingContext2D} */ (
-  document.createElement("canvas").getContext("2d")
+  document
+    .createElement("canvas")
+    .getContext("2d", { willReadFrequently: true })
 );
 
 /**
