@@ -13,20 +13,6 @@
  */
 
 /**
- * Sample the colour at a specific point in a 2d canvas context. Useful for
- * building eyedroppers but don't forget to scale the point to match the
- * canvas's internal scaling!
- *
- * @param {CanvasRenderingContext2D} ctx
- * @param {Point} point
- * @returns {string}
- */
-export function sampleColorAtPoint(ctx, point) {
-  let { r, g, b, a } = sampleRgbaAtPoint(ctx, point);
-  return a > 0 ? `rgba(${r}, ${g}, ${b}, ${a / 255})` : `rgb(255, 255, 255)`;
-}
-
-/**
  * @param {CanvasRenderingContext2D} ctx
  * @param {Point} point
  * @returns {Rgba}

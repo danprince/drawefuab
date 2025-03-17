@@ -1,10 +1,10 @@
 // @ts-check
 
 import {
-  sampleColorAtPoint,
   assert,
   pointsToSmoothPath,
   addDragListeners,
+  sampleRgbaAtPoint,
 } from "./utils.js";
 
 /**
@@ -157,10 +157,12 @@ class Editor {
       let y = Math.floor(event.clientY - bounds.y);
 
       if (this.currentTool === "eyedropper") {
-        this.currentColor = sampleColorAtPoint(this.contentContext, {
+        let color = sampleRgbaAtPoint(this.contentContext, {
           x: x * this.resolution,
           y: y * this.resolution,
         });
+        this.currentColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+        this.currentOpacity = color.a / 255;
       } else if (this.currentTool === "pen") {
         this.currentPath = [];
         addDragListeners(event, {
