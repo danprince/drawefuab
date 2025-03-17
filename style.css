@@ -35,10 +35,13 @@ button {
   position: absolute;
   width: 100%;
   height: 100%;
+  border-radius: 6px;
   /* We render a custom cursor inside the preview canvas (depending on which
    * tool you are using). */
   cursor: none;
-  border-radius: 6px;
+  /* Disable touch events so that mobile interactions can be handled through
+   * regular pointer events, just like desktop. */
+  touch-action: none;
 }
 
 .swatch {
