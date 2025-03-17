@@ -28,6 +28,7 @@ button {
   border: solid 2px black;
   border-radius: 8px;
   box-shadow: 0 6px #320e6d;
+  margin-bottom: 14px;
 }
 
 .viewport canvas {
@@ -37,6 +38,7 @@ button {
   /* We render a custom cursor inside the preview canvas (depending on which
    * tool you are using). */
   cursor: none;
+  border-radius: 6px;
 }
 
 .swatch {
