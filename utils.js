@@ -18,10 +18,7 @@
  * @returns {Rgba}
  */
 export function sampleRgbaAtPoint(ctx, point) {
-  let transform = ctx.getTransform();
-  let x = (point.x * transform.a) | 0;
-  let y = (point.y * transform.d) | 0;
-  let imageData = ctx.getImageData(x, y, 1, 1);
+  let imageData = ctx.getImageData(point.x, point.y, 1, 1);
   let [r, g, b, a] = imageData.data;
   return { r, g, b, a };
 }
@@ -253,10 +250,9 @@ export function floodfill(ctx, point, color, opacity) {
   // Implementation of the algorithm described in this article:
   // https://www.williammalone.com/articles/html5-canvas-javascript-paint-bucket-tool/
 
-  let transform = ctx.getTransform();
   let { width, height } = ctx.canvas;
   let imageData = ctx.getImageData(0, 0, width, height);
-  let initialPixel = point.x * transform.a + point.y * transform.d * width;
+  let initialPixel = point.x + point.y * width;
   let stack = [initialPixel];
 
   while (stack.length > 0) {

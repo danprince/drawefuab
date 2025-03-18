@@ -161,9 +161,9 @@ class Editor {
       let y = Math.floor(event.clientY - bounds.y);
 
       if (this.currentTool === "eyedropper") {
-        let color = sampleRgbaAtPoint(this.contentContext, { x, y });
-        this.currentColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
-        this.currentOpacity = color.a / 255;
+        this.pickColorAt({ x, y });
+      } else if (this.currentTool === "fill") {
+        this.fill({ x, y });
       } else if (this.currentTool === "pen") {
         this.currentPath = [];
         addDragListeners(event, {
@@ -204,12 +204,24 @@ class Editor {
             this.currentPath = [];
           },
         });
-      } else if (this.currentTool === "fill") {
-        this.fill({ x, y });
       }
     });
 
     this.resize();
+  }
+
+  /**
+   * Translate from a point in the editor space into the canvas space. It's
+   * necessary to use this any time you need to interact with a specific pixel
+   * (e.g. eyedropping a color or starting a floodfill).
+   * @param {Point} point
+   * @returns {Point}
+   */
+  pointToPixel(point) {
+    return {
+      x: Math.floor(point.x * this.resolution),
+      y: Math.floor(point.y * this.resolution),
+    };
   }
 
   /**
@@ -223,11 +235,28 @@ class Editor {
   }
 
   /**
+   * Set the current color from the color of a pixel at a point.
+   * @param {Point} point
+   */
+  pickColorAt(point) {
+    let color = sampleRgbaAtPoint(
+      this.contentContext,
+      this.pointToPixel(point),
+    );
+    this.currentColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+    this.currentOpacity = color.a / 255;
+  }
+
+  /**
    * Fill the region around a point using the current color and opacity.
    * @param {Point} point
    */
   fill(point) {
-    let sourceColor = sampleRgbaAtPoint(this.contentContext, point);
+    let sourceColor = sampleRgbaAtPoint(
+      this.contentContext,
+      this.pointToPixel(point),
+    );
+
     let targetColor = this.getCurrentColorAsRgba();
 
     if (areColorsEqual(sourceColor, targetColor)) {
@@ -347,7 +376,7 @@ class Editor {
 
     for (let i = this.renderHead; i < this.head; i++) {
       let command = this.commands[i];
-      applyDrawCommand(ctx, command);
+      this.applyDrawCommand(ctx, command);
     }
 
     ctx.restore();
@@ -366,7 +395,7 @@ class Editor {
 
     // Render current path
     if (this.currentPath.length > 0) {
-      applyDrawCommand(ctx, {
+      this.applyDrawCommand(ctx, {
         type: "stroke",
         points: this.currentPath,
         size: this.currentPenSize,
@@ -411,6 +440,41 @@ class Editor {
       },
     });
   }
+
+  /**
+   * Apply a draw command to a canvas context.
+   * @param {CanvasRenderingContext2D} ctx
+   * @param {DrawingCommand} command
+   */
+  applyDrawCommand(ctx, command) {
+    ctx.save();
+
+    if (command.type === "stroke") {
+      let path = pointsToSmoothPath(command.points);
+      ctx.lineWidth = command.size;
+      ctx.globalAlpha = command.opacity;
+      ctx.strokeStyle = command.color;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke(path);
+    } else if (command.type === "erase") {
+      let path = pointsToSmoothPath(command.points);
+      ctx.lineWidth = command.size;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.stroke(path);
+    } else if (command.type === "fill") {
+      floodfill(
+        ctx,
+        this.pointToPixel(command.point),
+        command.color,
+        command.opacity,
+      );
+    }
+
+    ctx.restore();
+  }
 }
 
 /**
@@ -449,36 +513,6 @@ function renderCrosshairs(ctx, x, y, radius) {
   ctx.strokeStyle = "black";
   ctx.lineWidth = 1;
   ctx.stroke();
-}
-
-/**
- * Apply a draw command to a canvas context.
- * @param {CanvasRenderingContext2D} ctx
- * @param {DrawingCommand} command
- */
-function applyDrawCommand(ctx, command) {
-  ctx.save();
-
-  if (command.type === "stroke") {
-    let path = pointsToSmoothPath(command.points);
-    ctx.lineWidth = command.size;
-    ctx.globalAlpha = command.opacity;
-    ctx.strokeStyle = command.color;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.stroke(path);
-  } else if (command.type === "erase") {
-    let path = pointsToSmoothPath(command.points);
-    ctx.lineWidth = command.size;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    ctx.globalCompositeOperation = "destination-out";
-    ctx.stroke(path);
-  } else if (command.type === "fill") {
-    floodfill(ctx, command.point, command.color, command.opacity);
-  }
-
-  ctx.restore();
 }
 
 Object.assign(window, { Editor });
