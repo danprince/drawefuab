@@ -243,8 +243,15 @@ class Editor {
       this.contentContext,
       this.pointToPixel(point),
     );
-    this.currentColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
-    this.currentOpacity = color.a / 255;
+
+    if (color.a > 0) {
+      this.currentColor = `rgb(${color.r}, ${color.g}, ${color.b})`;
+      this.currentOpacity = color.a / 255;
+    } else {
+      // Fully transparent colors are picked as white
+      this.currentColor = "rgb(255, 255, 255)";
+      this.currentOpacity = 1;
+    }
   }
 
   /**
