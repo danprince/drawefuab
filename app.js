@@ -418,8 +418,13 @@ class Editor {
     // Render crosshairs
     if (this.cursor) {
       let { x, y } = this.cursor;
-      let radius = this.currentPenSize / 2;
-      renderCrosshairs(ctx, x, y, radius);
+      let size = 5;
+
+      if (this.currentTool === "pen" || this.currentTool === "eraser") {
+        size = this.currentPenSize;
+      }
+
+      renderCrosshairs(ctx, x, y, size / 2);
     }
 
     ctx.restore();
