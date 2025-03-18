@@ -10,6 +10,10 @@
   <body
     x-data="new Editor()"
     @keydown.window.meta.z="$event.shiftKey ? redo() : undo()"
+    @keydown.window.p="setTool('pen')"
+    @keydown.window.e="setTool('eraser')"
+    @keydown.window.i="setTool('eyedropper')"
+    @keydown.window.f="setTool('fill')"
   >
     <div class="app">
       <div class="color-palette panel">
