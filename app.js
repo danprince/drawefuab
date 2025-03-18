@@ -7,6 +7,7 @@ import {
   sampleRgbaAtPoint,
   floodfill,
   colorToRgba,
+  areColorsEqual,
 } from "./utils.js";
 
 /**
@@ -229,7 +230,7 @@ class Editor {
     let sourceColor = sampleRgbaAtPoint(this.contentContext, point);
     let targetColor = this.getCurrentColorAsRgba();
 
-    if (sourceColor === targetColor) {
+    if (areColorsEqual(sourceColor, targetColor)) {
       return;
     }
 

@@ -345,3 +345,13 @@ function isSameColor(imageData, pixelIndex, color) {
     imageData.data[i + 3] === color.a
   );
 }
+
+/**
+ *
+ * @param {Rgba} a
+ * @param {Rgba} b
+ * @returns {boolean}
+ */
+export function areColorsEqual(a, b) {
+  return a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
+}
