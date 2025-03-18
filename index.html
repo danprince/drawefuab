@@ -9,8 +9,7 @@
 
   <body
     x-data="new Editor()"
-    @keydown.window.meta.z="canUndo() && undo()"
-    @keydown.window.meta.Z="canRedo() && redo()"
+    @keydown.window.meta.z="$event.shiftKey ? redo() : undo()"
   >
     <div class="app">
       <div class="color-palette panel">
