@@ -149,7 +149,7 @@ function simplifyPoints(points: Point[], minDistance: number = 1): Point[] {
     }
 
     prev = point;
-    path.unshift(point);
+    path.push(point);
   }
 
   return path;
