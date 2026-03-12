@@ -541,7 +541,7 @@ class DrawingEditorElement extends HTMLElement {
   private onToolChange = (event: CustomEvent) => {
     if (!this.editor) return;
 
-    let tool = event.detail["data-tool"];
+    let tool = event.detail.tool;
 
     if (tool === "pen") {
       this.editor.setTool({ type: "pen", points: [] });

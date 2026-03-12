@@ -45,7 +45,29 @@ window.addEventListener("change", (event) => {
   assert(event.target instanceof HTMLElement);
 
   let form = event.target.closest("form");
+
   if (form?.getAttribute("data-submit") === "change") {
     form.requestSubmit();
   }
+
+  tryToFireEvent(event.target);
 });
+
+window.addEventListener("click", (event) => {
+  assert(event.target instanceof HTMLElement);
+  let button = event.target.closest("[data-event]") as HTMLElement;
+  if (button) tryToFireEvent(button);
+});
+
+function tryToFireEvent(element: HTMLElement) {
+  let type = element.dataset.event;
+
+  if (type) {
+    let detail = { ...element.dataset };
+    if (element instanceof HTMLInputElement) {
+      detail.value = element.value;
+    }
+    let event = new CustomEvent(type, { detail });
+    window.dispatchEvent(event);
+  }
+}
