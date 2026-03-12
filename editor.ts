@@ -182,9 +182,9 @@ class Editor {
         .forEach((input) => {
           (input as HTMLInputElement).value = rgbaToHex({ r, g, b, a });
         });
-    } else if (this.tool.type === "pen") {
+    } else if (this.tool.type === "pen" && this.tool.points.length === 0) {
       this.tool.points = [{ x, y }];
-    } else if (this.tool.type === "eraser") {
+    } else if (this.tool.type === "eraser" && this.tool.points.length === 0) {
       this.tool.points = [{ x, y }];
     } else if (this.tool.type === "text") {
       let { color, fontSize } = this;
