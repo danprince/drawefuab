@@ -1,11 +1,9 @@
 {
-  "name": "drawefuab-multiplayer",
-  "type": "module",
+  "name": "drawefuab",
   "private": true,
   "scripts": {
-    "start": "cd dist && bun server.js",
-    "build": "bun build --target bun --production --outdir=dist ./server.tsx",
-    "dev": "bun --watch server.tsx"
+    "start": "bun server.ts",
+    "dev": "bun --watch server.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -13,7 +11,7 @@
   },
   "dependencies": {
     "@fontsource/schoolbell": "^5.2.7",
-    "@kitajs/html": "^4.2.13",
-    "morphlex": "^1.4.0"
+    "@preact/signals": "^2.8.2",
+    "preact": "^10.29.0"
   }
 }
