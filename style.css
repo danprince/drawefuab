@@ -2,4 +2,68 @@
 
 body {
   font-family: "Schoolbell", sans-serif;
+  overscroll-behavior: none;
+  font-size: 28px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  position: fixed;
+  inset: 0;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: stretch;
+  gap: 8px;
+}
+
+canvas {
+  touch-action: none;
+  box-shadow: 0 0 0 3px black;
+  cursor: none;
+  border-radius: 4px;
+  display: block;
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  opacity: 50%;
+  cursor: pointer;
+}
+
+button:hover,
+button[aria-pressed="true"] {
+  opacity: 100%;
+}
+
+header, footer {
+  display: flex;
+  gap: 4px;
+  align-self: stretch;
+}
+
+.icon {
+  vertical-align: middle;
+  overflow: visible;
+}
+
+.grow {
+  flex: 1 1;
+}
+
+h1, h2, h3, p {
+  margin: 0;
+}
+
+.subtitle {
+  margin: 1rem 0;
+  color: grey;
 }

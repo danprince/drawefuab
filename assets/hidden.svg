@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none">
-  <path
-    stroke="#ddd"
-    stroke-linecap="round"
-    stroke-width="2"
-    d="m0 24 4-4L24 0m-35 11 4-4 20-20M-3 19l4-4L21-5M6 26l4-4L30 2M10 30l4-4L34 6m-41 9 4-4L17-9m-5 45 4-4 20-20"
-  />
-</svg>

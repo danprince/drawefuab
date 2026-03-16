@@ -1,7 +1,7 @@
 import { serve, type ServerWebSocket } from "bun";
 import index from "./index.html";
 import settings from "./settings.json";
-import { type Result, Ok, remove, Err, shuffle, toggle } from "./utils";
+import { type Result, Ok, remove, Err, shuffle, toggle, add } from "./utils";
 
 export type Point = { x: number; y: number };
 
@@ -37,7 +37,7 @@ export type DrawCommand =
 
 type LobbyPhase = { type: "lobby" };
 
-type DrawPhase = { type: "draw"; round: number; readyClientIds: string[] };
+type DrawPhase = { type: "draw"; turn: number; readyClientIds: string[] };
 
 type RevealPhase = { type: "reveal"; step: number };
 
@@ -64,7 +64,7 @@ export type Drawing = {
 
 export type DrawingStep = {
   /**
-   * The commands that were added to the drawing during this step/round.
+   * The commands that were added to the drawing during this turn.
    */
   commands: DrawCommand[];
 };
@@ -90,11 +90,9 @@ export type Game = {
 
 export type ClientStartMessage = { type: "start" };
 
-export type ClientReadyMessage = { type: "ready" };
-
-export type ClientUnreadyMessage = { type: "unready" };
-
 export type ClientSubmitMessage = { type: "submit"; commands: DrawCommand[] };
+
+export type ClientUnsubmitMessage = { type: "unsubmit" };
 
 export type ClientFinishMessage = { type: "finish" };
 
@@ -102,8 +100,7 @@ export type ClientRevealMessage = { type: "reveal"; step: number };
 
 export type ClientMessage =
   | ClientStartMessage
-  | ClientReadyMessage
-  | ClientUnreadyMessage
+  | ClientUnsubmitMessage
   | ClientSubmitMessage
   | ClientFinishMessage
   | ClientRevealMessage;
@@ -124,12 +121,10 @@ export function update(
   switch (message.type) {
     case "start":
       return start(game);
-    case "ready":
-      return ready(game, player);
-    case "unready":
-      return unready(game, player);
     case "submit":
       return submit(game, player, message.commands);
+    case "unsubmit":
+      return unsubmit(game, player);
     case "reveal":
       return reveal(game, message.step);
     case "finish":
@@ -150,6 +145,13 @@ export function leave(game: Game, player: Player): Result<Game> {
     player.isConnected = false;
   }
 
+  if (
+    game.players.length === 0 ||
+    game.players.every((player) => !player.isConnected)
+  ) {
+    return Ok(createGame());
+  }
+
   return Ok(game);
 }
 
@@ -162,48 +164,10 @@ function start(game: Game): Result<Game> {
     return Err("Game cannot start without players!");
   }
 
-  game.phase = { type: "draw", round: 0, readyClientIds: [] };
+  game.phase = { type: "draw", turn: 0, readyClientIds: [] };
   game.players = game.players.filter((player) => player.isConnected);
   game.ordering = shuffle(game.players).map((player) => player.clientId);
-  game.drawings = game.players.map(() => createDrawing(settings.rounds));
-
-  return Ok(game);
-}
-
-function ready(game: Game, player: Player): Result<Game> {
-  if (game.phase.type !== "draw") {
-    return Err("Ready is only allowed during drawing phase!");
-  }
-
-  game.phase.readyClientIds = toggle(
-    game.phase.readyClientIds,
-    player.clientId,
-  );
-
-  if (game.phase.readyClientIds.length === game.ordering.length) {
-    if (game.phase.round >= settings.rounds - 1) {
-      game.phase = { type: "reveal", step: 0 };
-    } else {
-      game.phase = {
-        type: "draw",
-        round: game.phase.round + 1,
-        readyClientIds: [],
-      };
-    }
-  }
-
-  return Ok(game);
-}
-
-function unready(game: Game, player: Player): Result<Game> {
-  if (game.phase.type !== "draw") {
-    return Err("Unready is only allowed during drawing phase!");
-  }
-
-  game.phase.readyClientIds = toggle(
-    game.phase.readyClientIds,
-    player.clientId,
-  );
+  game.drawings = game.players.map(() => createDrawing(settings.turns));
 
   return Ok(game);
 }
@@ -214,17 +178,44 @@ function submit(
   commands: DrawCommand[],
 ): Result<Game> {
   if (game.phase.type !== "draw") {
-    return Err("Submissions are only allowed during draw phase!");
+    return Err("Submit is only allowed during draw phase!");
   }
 
   let drawing = getCurrentDrawing(game, player);
-  let step = drawing?.steps[game.phase.round];
+  let step = drawing?.steps[game.phase.turn];
 
   if (!step) {
     return Err("Missing drawing step! This is a bug!");
   }
 
   step.commands = commands;
+
+  game.phase.readyClientIds = add(game.phase.readyClientIds, player.clientId);
+
+  if (game.phase.readyClientIds.length === game.ordering.length) {
+    if (game.phase.turn >= settings.turns - 1) {
+      game.phase = { type: "reveal", step: 0 };
+    } else {
+      game.phase = {
+        type: "draw",
+        turn: game.phase.turn + 1,
+        readyClientIds: [],
+      };
+    }
+  }
+
+  return Ok(game);
+}
+
+function unsubmit(game: Game, player: Player): Result<Game> {
+  if (game.phase.type !== "draw") {
+    return Err("Unsubmit is only allowed during drawing phase!");
+  }
+
+  game.phase.readyClientIds = remove(
+    game.phase.readyClientIds,
+    player.clientId,
+  );
 
   return Ok(game);
 }
@@ -234,7 +225,7 @@ function reveal(game: Game, step: number): Result<Game> {
     return Err("Reveal is only allowed during reveal phase!");
   }
 
-  if (step <= 0 || step >= game.drawings.length) {
+  if (step < 0 || step >= game.drawings.length) {
     return Err("Attempting to reveal a drawing that does not exist!");
   }
 
@@ -261,14 +252,19 @@ export type ClientLobbyState = { type: "lobby"; players: number };
 export type ClientDrawState = {
   type: "draw";
   playerCount: number;
-  round: number;
-  rounds: number;
+  turn: number;
+  turns: number;
   readyCount: number;
   ready: boolean;
   commands: DrawCommand[];
 };
 
-export type ClientRevealState = { type: "reveal"; step: number; steps: number };
+export type ClientRevealState = {
+  type: "reveal";
+  step: number;
+  steps: number;
+  commands: DrawCommand[];
+};
 
 export type ClientState =
   | ClientQueueState
@@ -287,13 +283,17 @@ export function getClientState(game: Game, player: Player): ClientState {
     }
 
     let drawing = getCurrentDrawing(game, player);
-    let commands = drawing?.steps.flatMap((step) => step.commands) ?? [];
+
+    let commands =
+      drawing?.steps
+        .slice(0, game.phase.turn)
+        .flatMap((step) => step.commands) ?? [];
 
     return {
       type: "draw",
       commands,
-      round: game.phase.round,
-      rounds: settings.rounds,
+      turn: game.phase.turn,
+      turns: settings.turns,
       playerCount: game.ordering.length,
       readyCount: game.phase.readyClientIds.length,
       ready: game.phase.readyClientIds.includes(player.clientId),
@@ -301,15 +301,27 @@ export function getClientState(game: Game, player: Player): ClientState {
   }
 
   if (game.phase.type === "reveal") {
-    return { type: "reveal", step: game.phase.step, steps: settings.rounds };
+    let drawing = game.drawings[game.phase.step];
+
+    let commands =
+      drawing?.steps
+        .flatMap((step) => step.commands)
+        .filter((command) => command.type !== "hide") ?? [];
+
+    return {
+      type: "reveal",
+      step: game.phase.step,
+      steps: game.drawings.length,
+      commands,
+    };
   }
 
   return game.phase;
 }
 
-function createDrawing(rounds: number): Drawing {
+function createDrawing(turns: number): Drawing {
   return {
-    steps: Array.from({ length: rounds }).map(() => ({ commands: [] })),
+    steps: Array.from({ length: turns }).map(() => ({ commands: [] })),
   };
 }
 
@@ -323,7 +335,7 @@ function createPlayer(clientId: string): Player {
 
 function getCurrentDrawing(game: Game, player: Player): Drawing | undefined {
   if (game.phase.type === "draw") {
-    let index = game.ordering.indexOf(player.clientId) + game.phase.round;
+    let index = game.ordering.indexOf(player.clientId) + game.phase.turn;
     return game.drawings[index % game.drawings.length];
   }
 }
@@ -364,8 +376,8 @@ function synchronize(
 
   for (let player of game.players) {
     let state = getClientState(game, player);
-    let socket = sockets.get(player.clientId)!;
-    send(socket, { type: "state", state });
+    let socket = sockets.get(player.clientId);
+    if (socket) send(socket, { type: "state", state });
   }
 }
 

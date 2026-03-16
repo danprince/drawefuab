@@ -1,5 +1,15 @@
 {
-  "rounds": 3,
+  "turns": 3,
   "width": 500,
-  "height": 500
+  "height": 500,
+
+  "brushSizes": [1, 2, 3, 5, 10, 20, 30, 50, 60, 70],
+  "defaultBrushSize": 3,
+
+  "fontFamily": "Schoolbell",
+  "fontSizes": [5, 10, 15, 20, 30, 40, 50, 60, 70, 80],
+  "defaultFontSize": 10,
+
+  "colors": ["#000000"],
+  "defaultColor": "#000000"
 }
