@@ -3,7 +3,7 @@ import type {
   ClientUpdate,
   ClientDrawState,
   ClientLobbyState,
-  ClientMessage,
+  ClientAction,
   ClientQueueState,
   ClientRevealState,
   ClientState,
@@ -40,8 +40,8 @@ function getClientId(): string {
   return clientId;
 }
 
-function send(message: ClientMessage): void {
-  socket.send(JSON.stringify(message));
+function send(action: ClientAction): void {
+  socket.send(JSON.stringify(action));
 }
 
 let iconSpritesUrl = require("./icons.svg");

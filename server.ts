@@ -88,22 +88,22 @@ export type Game = {
   ordering: string[];
 };
 
-export type ClientStartMessage = { type: "start" };
+export type ClientStartAction = { type: "start" };
 
-export type ClientSubmitMessage = { type: "submit"; commands: DrawCommand[] };
+export type ClientSubmitAction = { type: "submit"; commands: DrawCommand[] };
 
-export type ClientUnsubmitMessage = { type: "unsubmit" };
+export type ClientUnsubmitAction = { type: "unsubmit" };
 
-export type ClientFinishMessage = { type: "finish" };
+export type ClientFinishAction = { type: "finish" };
 
-export type ClientRevealMessage = { type: "reveal"; step: number };
+export type ClientRevealAction = { type: "reveal"; step: number };
 
-export type ClientMessage =
-  | ClientStartMessage
-  | ClientUnsubmitMessage
-  | ClientSubmitMessage
-  | ClientFinishMessage
-  | ClientRevealMessage;
+export type ClientAction =
+  | ClientStartAction
+  | ClientSubmitAction
+  | ClientUnsubmitAction
+  | ClientFinishAction
+  | ClientRevealAction;
 
 export type ClientUpdate =
   | { type: "error"; error: string }
@@ -116,17 +116,17 @@ type WebSocketData = {
 export function update(
   game: Game,
   player: Player,
-  message: ClientMessage,
+  action: ClientAction,
 ): Result<Game> {
-  switch (message.type) {
+  switch (action.type) {
     case "start":
       return start(game);
     case "submit":
-      return submit(game, player, message.commands);
+      return submit(game, player, action.commands);
     case "unsubmit":
       return unsubmit(game, player);
     case "reveal":
-      return reveal(game, message.step);
+      return reveal(game, action.step);
     case "finish":
       return finish(game);
   }
@@ -401,10 +401,10 @@ let server = serve({
       let player = findPlayerById(game, socket.data.clientId);
       if (player) synchronize(socket, leave(game, player));
     },
-    message(socket, rawMessage) {
-      let message = JSON.parse(rawMessage.toString()) as ClientMessage;
+    message(socket, message) {
+      let action = JSON.parse(message.toString()) as ClientAction;
       let player = findPlayerById(game, socket.data.clientId);
-      if (message && player) synchronize(socket, update(game, player, message));
+      if (action && player) synchronize(socket, update(game, player, action));
     },
   },
 
