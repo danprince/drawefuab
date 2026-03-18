@@ -254,15 +254,15 @@ function colorToRgba(color: string): number {
  */
 export function sampleColor(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
+  point: Point,
 ): string {
-  let imageData = ctx.getImageData(x, y, 1, 1);
+  let imageData = ctx.getImageData(point.x, point.y, 1, 1);
   let r = imageData.data[0]!;
   let g = imageData.data[1]!;
   let b = imageData.data[2]!;
   let a = imageData.data[3]!;
-  return a ? `#${byteToHex(r)}${byteToHex(g)}${byteToHex(b)}` : `#ffffff`;
+  if (a === 0) return "#ffffff";
+  return `#${byteToHex(r)}${byteToHex(g)}${byteToHex(b)}`;
 }
 
 /**

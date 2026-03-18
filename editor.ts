@@ -159,22 +159,24 @@ function removeEventListeners(editor: Editor, handler: (event: Event) => void) {
 }
 
 type EditorEvent =
-  | { type: "pointerdown"; point: Point; original: PointerEvent }
-  | { type: "pointermove"; point: Point; original: PointerEvent }
-  | { type: "pointerup"; point: Point; original: PointerEvent }
+  | { type: "pointerdown"; point: Point; pixel: Point; original: PointerEvent }
+  | { type: "pointermove"; point: Point; pixel: Point; original: PointerEvent }
+  | { type: "pointerup"; point: Point; pixel: Point; original: PointerEvent }
   | { type: "keydown"; key: string; original: KeyboardEvent }
   | { type: "keyup"; key: string; original: KeyboardEvent };
 
 function toEditorEvent(editor: Editor, event: Event): EditorEvent | undefined {
   if (event instanceof PointerEvent) {
+    let resolution = editor.resolution;
     let point = screenToEditor(editor, event.clientX, event.clientY);
+    let pixel = { x: point.x * resolution, y: point.y * resolution };
 
     if (event.type === "pointerdown")
-      return { type: "pointerdown", point, original: event };
+      return { type: "pointerdown", point, pixel, original: event };
     if (event.type === "pointerup")
-      return { type: "pointerup", point, original: event };
+      return { type: "pointerup", point, pixel, original: event };
     if (event.type === "pointermove")
-      return { type: "pointermove", point, original: event };
+      return { type: "pointermove", point, pixel, original: event };
   }
 
   if (event instanceof KeyboardEvent) {
@@ -188,8 +190,8 @@ function toEditorEvent(editor: Editor, event: Event): EditorEvent | undefined {
 function screenToEditor(editor: Editor, x: number, y: number): Point {
   let rect = editor.canvas.getBoundingClientRect();
   return {
-    x: x - rect.x,
-    y: y - rect.y,
+    x: Math.floor(x - rect.x),
+    y: Math.floor(y - rect.y),
   };
 }
 
@@ -252,11 +254,7 @@ function dispatch(editor: Editor, event: EditorEvent) {
 
   if (tool.type === "paint") {
     if (event.type === "pointerdown" && event.original.altKey) {
-      let color = sampleColor(
-        editor.ctx,
-        event.point.x * editor.resolution,
-        event.point.y * editor.resolution,
-      );
+      let color = sampleColor(editor.ctx, event.pixel);
       setColor(editor, color);
     } else if (event.type === "pointerdown" && tool.points === undefined) {
       tool.points = [event.point];
@@ -330,11 +328,7 @@ function dispatch(editor: Editor, event: EditorEvent) {
 
   if (tool.type === "eyedropper") {
     if (event.type === "pointerup") {
-      let color = sampleColor(
-        editor.ctx,
-        event.point.x * editor.resolution,
-        event.point.y * editor.resolution,
-      );
+      let color = sampleColor(editor.ctx, event.pixel);
       setColor(editor, color);
     }
   }
