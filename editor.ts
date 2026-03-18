@@ -297,7 +297,8 @@ function dispatch(editor: Editor, event: EditorEvent) {
       tool.end = event.point;
     } else if (event.type === "pointerup" && tool.start && tool.end) {
       let command = hide({ start: tool.start, end: tool.end });
-      commit(editor, command);
+      let { w, h } = command.rectangle;
+      if (w * h > 20) commit(editor, command);
       tool.start = tool.end = undefined;
     } else if (event.type === "keydown" && event.key === "Escape") {
       tool.start = tool.end = undefined;
