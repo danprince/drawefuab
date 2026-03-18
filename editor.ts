@@ -10,7 +10,12 @@ import type {
   TextCommand,
 } from "./server";
 import settings from "./settings.json";
-import { floodfill, hashString, pointsToSmoothPath } from "./utils";
+import {
+  floodfill,
+  hashString,
+  pointsToSmoothPath,
+  sampleColor,
+} from "./utils";
 
 export type ViewTool = { type: "view" };
 export type PaintTool = { type: "paint"; points?: Point[] };
@@ -18,13 +23,15 @@ export type EraseTool = { type: "erase"; points?: Point[] };
 export type FillTool = { type: "fill" };
 export type TextTool = { type: "text"; text: string };
 export type HideTool = { type: "hide"; start?: Point; end?: Point };
+export type EyedropperTool = { type: "eyedropper" };
 export type Tool =
   | ViewTool
   | PaintTool
   | EraseTool
   | FillTool
   | TextTool
-  | HideTool;
+  | HideTool
+  | EyedropperTool;
 
 export type Editor = {
   brushSize: Signal<number>;
@@ -217,6 +224,10 @@ function dispatch(editor: Editor, event: EditorEvent) {
     setTool(editor, { type: "hide" });
   }
 
+  if (event.type === "keydown" && event.key === "i") {
+    setTool(editor, { type: "eyedropper" });
+  }
+
   if (event.type === "keydown" && isUndoShortcut(event.original)) {
     event.original.preventDefault();
     undo(editor);
@@ -240,7 +251,14 @@ function dispatch(editor: Editor, event: EditorEvent) {
   }
 
   if (tool.type === "paint") {
-    if (event.type === "pointerdown" && tool.points === undefined) {
+    if (event.type === "pointerdown" && event.original.altKey) {
+      let color = sampleColor(
+        editor.ctx,
+        event.point.x * editor.resolution,
+        event.point.y * editor.resolution,
+      );
+      setColor(editor, color);
+    } else if (event.type === "pointerdown" && tool.points === undefined) {
       tool.points = [event.point];
     } else if (event.type === "pointermove" && tool.points) {
       tool.points.push(event.point);
@@ -307,6 +325,17 @@ function dispatch(editor: Editor, event: EditorEvent) {
       tool.text = "";
     } else if (event.type === "keydown" && event.key === "Escape") {
       tool.text = "";
+    }
+  }
+
+  if (tool.type === "eyedropper") {
+    if (event.type === "pointerup") {
+      let color = sampleColor(
+        editor.ctx,
+        event.point.x * editor.resolution,
+        event.point.y * editor.resolution,
+      );
+      setColor(editor, color);
     }
   }
 
@@ -569,6 +598,8 @@ function renderToolPreview(editor: Editor): void {
     renderCursor(ctx, Paths.crosshair, editor.cursor, 20);
   } else if (tool.type === "text" && tool.text.length === 0) {
     renderCursor(ctx, Paths.caret, editor.cursor, editor.fontSize.value);
+  } else if (tool.type === "eyedropper") {
+    renderCursor(ctx, Paths.target, editor.cursor, 20);
   }
 }
 
@@ -577,7 +608,6 @@ let Paths = {
     M 0.5 0
     A 0.5 0.5 0 1 0 -0.5 0
     A 0.5 0.5 0 1 0 0.5 0
-    Z
   `),
   crosshair: new Path2D(`
     M 0 -0.5 0 0.5
@@ -587,6 +617,15 @@ let Paths = {
     M -0.2 -0.5 0.2 -0.5
     M 0 -0.5 0 0.5
     M -0.2 0.5 0.2 0.5
+  `),
+  target: new Path2D(`
+    M 0.2 0
+    A 0.2 0.2 0 1 0 -0.2 0
+    A 0.2 0.2 0 1 0 0.2 0
+    M 0 -0.5 0 -0.25
+    M 0 0.25 0 0.5
+    M -0.5 0 -0.25 0
+    M 0.25 0 0.5 0
   `),
 };
 

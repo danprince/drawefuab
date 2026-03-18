@@ -247,3 +247,27 @@ function colorToRgba(color: string): number {
   c.fillRect(0, 0, 1, 1);
   return new Uint32Array(c.getImageData(0, 0, 1, 1).data.buffer)[0]!;
 }
+
+/**
+ * Get the color under a specific pixel of the canvas. Note that this needs to
+ * be in pixel coordinates (e.g. accounting for high DPI resolution).
+ */
+export function sampleColor(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+): string {
+  let imageData = ctx.getImageData(x, y, 1, 1);
+  let r = imageData.data[0]!;
+  let g = imageData.data[1]!;
+  let b = imageData.data[2]!;
+  let a = imageData.data[3]!;
+  return a ? `#${byteToHex(r)}${byteToHex(g)}${byteToHex(b)}` : `#ffffff`;
+}
+
+/**
+ * Format a byte as a two digit hex string.
+ */
+function byteToHex(byte: number): string {
+  return byte.toString(16).padStart(2, "0");
+}
